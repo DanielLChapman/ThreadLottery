@@ -1,26 +1,75 @@
 import java.util.Random;
 
 public class LotteryCalc implements Runnable {
-	private Thread t;
-	private String threadName;
-	static Random rand = new Random();
 
+	private Thread t;
+	static Random rand = new Random();
+	private String threadName;
+	public static int numTickets = 0;
+	private static boolean stop = false;
+	public static int total = 0;
+	public static int[] numberOfMatches = {0,0,0,0,0,0};
+	
 	public LotteryCalc(String name) {
 		threadName = name;
 		System.out.println("Creating " + threadName);
 	}
+	
+	public void setWinning(int[] tempWin) {
+		numberOfMatches = tempWin;
+	}
+	public int getTotal() {
+		return total;
+	}
+	public int getNumTickets() {
+		return numTickets;
+	}
+	public boolean isStopped() {
+		if (stop) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 
-	public static boolean match(int[] winner, int[] ticket) {
+	public void stop() {
+		stop = true;
+	}
+	public boolean match(int[] winner, int[] ticket) {
 		boolean tempBool = true;
+		int counter = 0;
 		for (int i = 0; i < winner.length; i++) {
 			if (winner[i] != ticket[i]) {
 				tempBool = false;
 			}
+			else {
+				counter++;
+			}
+		}
+		if (counter == 6) {
+			total += 1000000000;
+		}
+		if (counter == 5 && ticket[5] != winner[5]) {
+			total += 1000000;
+		}
+		else if (counter == 4 && ticket[5] == winner[5]) {
+			total += 10000;
+		}
+		else if ((counter == 4 && ticket[5] != winner[5]) || (counter == 3 && ticket[5] == winner[5])) {
+			total += 100;
+		}
+		else if ((counter == 3 && ticket[5] != winner[5]) || (counter == 2 && ticket[5] == winner[5])) {
+			total += 7;
+		}
+		else if ((counter == 1 && ticket[5] == winner[5]) || (counter == 0 && ticket[5] == winner[5])) {
+			total += 4;
 		}
 		return tempBool;
 	}
 
-	public static int[] sort(int[] toSort) {
+	
+	public int[] sort(int[] toSort) {
 		int[] tempSort = new int[6];
 		tempSort = toSort;
 		try {
@@ -42,7 +91,7 @@ public class LotteryCalc implements Runnable {
 		return tempSort;
 	}
 
-	public static int[] generateTicket() {
+	public int[] generateTicket() {
 		int[] ticket = new int[6];
 		for (int i = 0; i < ticket.length - 1; i++) {
 			ticket[i] = generateRandom(59) + 1;
@@ -59,7 +108,7 @@ public class LotteryCalc implements Runnable {
 		return ticket;
 	}
 
-	public static int generateRandom(int size) {
+	public int generateRandom(int size) {
 		int tempOutPut = 0;
 		tempOutPut = rand.nextInt(size);
 		return tempOutPut;
@@ -69,16 +118,18 @@ public class LotteryCalc implements Runnable {
 	public void run() {
 		System.out.println("Running " + threadName);
 		int[] lottery = new int[6];
-		lottery = generateTicket();
+		lottery = numberOfMatches;
 		try {
 			int[] ticket = new int[6];
 			ticket = generateTicket();
-			while (!match(lottery, ticket)) {
-				System.out.println("not a winner" + " " + threadName);
+			stop = match(lottery, ticket);
+			while (!stop) {
+				numTickets++;
 				ticket = generateTicket();
-				Thread.sleep(5);
+				Thread.sleep(100);
+				stop = match(lottery, ticket);
 			}
-			System.out.println("winner " + threadName);
+			stop = true;
 		} catch (Exception e) {
 			System.err.println(e);
 		}
@@ -92,4 +143,6 @@ public class LotteryCalc implements Runnable {
 			t.start();
 		}
 	}
+	
 }
+
